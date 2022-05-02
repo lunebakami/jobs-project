@@ -1,7 +1,11 @@
 import { MailerModule } from '@nestjs-modules/mailer';
-import { BullModule } from '@nestjs/bull';
-import { Module } from '@nestjs/common';
+import { BullModule, InjectQueue } from '@nestjs/bull';
+import { Injectable, Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { MiddlewareBuilder } from '@nestjs/core';
+import { Queue } from 'bull';
+import { createBullBoard } from 'bull-board';
+import { BullAdapter } from 'bull-board/bullAdapter';
 import { CreateUserController } from './create-user/create-user.controller';
 import { SendMailConsumer } from './jobs/sendMail-consumer';
 import { SendMailProducerService } from './jobs/sendMail-producer-service';
@@ -32,4 +36,12 @@ import { SendMailProducerService } from './jobs/sendMail-producer-service';
   controllers: [CreateUserController],
   providers: [SendMailProducerService, SendMailConsumer],
 })
-export class AppModule {}
+export class AppModule {
+  constructor(@InjectQueue('sendMail-queue') private queue: Queue) {}
+
+  configure(consumer: MiddlewareBuilder) {
+    const { router } = createBullBoard([new BullAdapter(this.queue)]);
+
+    consumer.apply(router).forRoutes('/admin/queues');
+  }
+}

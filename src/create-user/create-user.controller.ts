@@ -9,7 +9,6 @@ export class CreateUserController {
 
   @Post('/')
   async createUser(@Body() createUser: CreateUserDTO) {
-    console.log('controller');
     this.sendMailService.sendMail(createUser);
     return createUser;
   }
